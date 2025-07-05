@@ -1,9 +1,12 @@
 const CONTRACT_ADDRESS = "0x2d67613c758b68e281785999bf2233883d1c25b0";
+
 const ERC20_ABI = [
   "function balanceOf(address) view returns (uint256)",
-  "function transfer(address to, uint256 amount) returns (bool)"
+  "function transfer(address to, uint256 amount) returns (bool)",
+  "function decimals() view returns (uint8)"            
 ];
 
+let tokenDecimals = 18;
 let provider;
 let signer;
 let contract;
@@ -26,6 +29,9 @@ async function connectWallet() {
   document.getElementById("account").innerText = `Connected: ${account}`;
   contract = new ethers.Contract(CONTRACT_ADDRESS, ERC20_ABI, signer);
 
+  // ✅ FETCH AND SAVE DECIMALS
+  tokenDecimals = await contract.decimals();
+
   document.getElementById("transferSection").style.display = "block";
 
   getBalance();
@@ -34,14 +40,13 @@ async function connectWallet() {
 async function getBalance() {
   try {
     const balance = await contract.balanceOf(account);
-    const formatted = ethers.formatUnits(balance, 18);
+    const formatted = ethers.formatUnits(balance, tokenDecimals);   // ✅ USE TOKEN DECIMALS
     document.getElementById("balance").innerText = `Balance: ${formatted} Tokens`;
   } catch (err) {
     console.error(err);
     alert("Error fetching balance. Check contract address and network!");
   }
 }
-
 
 async function sendTokens() {
   const recipient = document.getElementById("recipient").value;
@@ -53,8 +58,8 @@ async function sendTokens() {
   }
 
   try {
-    // Convert to wei
-    const value = ethers.parseUnits(amount, 18);
+    // ✅ USE TOKEN DECIMALS
+    const value = ethers.parseUnits(amount, tokenDecimals);
 
     console.log(`Sending ${value} to ${recipient}`);
 
